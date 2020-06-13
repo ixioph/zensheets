@@ -13,6 +13,7 @@ class ZenQuery():
         if view != None:
             self.view = view
             self.kind = 'VIEW'
+            return
         else:
             if text != None:
                 self.text = text
@@ -88,6 +89,7 @@ class ZenQuery():
         }
         return obj
 
+    # TODO: Evaluate I/O
     def format_tickets(self, custom=None):
         if self.tickets != None:
             objlist = []
@@ -117,9 +119,11 @@ class ZenQuery():
 
 
 class ZenOut():
-    def __init__(self, zq):
-        self.df = pd.DataFrame(zq.formatted)
-        return self.out
+    def __init__(self, zq=None):
+        if zq != None:
+            self.df = pd.DataFrame(zq)
+        else:
+            print('ZenQuery object required.')
 
     def to_csv(self, fname='a'):
         try:
