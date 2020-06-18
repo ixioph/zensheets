@@ -1,6 +1,10 @@
+from datetime import datetime
 import pandas as pd
 import pygsheets
 import requests
+import json
+
+# TODO: Dynamically formatted output
 class ZenQuery():
     tickets = None
     formatted = None
@@ -15,25 +19,41 @@ class ZenQuery():
             self.kind = 'VIEW'
             return
         else:
+            ## TODO: remove hardcoded spaces
+            self.query = ""
             if text != None:
                 self.text = text
-            if status != None:
-                self.status = status
-            if to_date != None:
-                self.to_date = to_date
-            if from_date != None:
-                self.from_date = from_date
+                self.query = text
             if tags != None:
                 self.tags = tags
+                if self.query != "":
+                    self.query += ' '
+                self.query += 'tags:{0}'.format(tags)
             if form != None:
                 self.form = form
+                self.query += ' form:{0}'.format(form)
             if group != None:
                 self.group = group
+                self.query += ' group:{0}'.format(group)
+            if status != None:
+                self.status = status
+                self.query += ' status:{0}'.format(status)
+            if from_date != None:
+                self.from_date = from_date
+                self.query += ' created>{0}'.format(from_date)
+            if to_date != None:
+                self.to_date = to_date
+                self.query += ' created<{0}'.format(to_date)
             if sortby != None:
                 self.sortby = sortby
+                self.query += '&sort_by={0}&sort_order={1}'.format(sortby[0], sortby[1])
+            else:
+                # sort by default
+                self.query += '&sort_by=created_at&sort_order=desc'
 
             self.kind = 'SEARCH'
             self.build_url()
+            print(self.url)
 
 
     def get_results(self):
@@ -46,8 +66,9 @@ class ZenQuery():
                 self.tickets = response['results']
                 if response['next_page'] is not None:
                     if 'page=11' not in response['next_page']:
-                        new_self.tickets = self.get_results(response['next_page'])
-                        self.tickets = self.tickets + new_self.tickets
+                        self.url = response['next_page']
+                        new_tickets = self.get_results()
+                        self.tickets = self.tickets + new_tickets
                     else:
                         last_ticket = self.tickets[len(self.tickets)-1]
                         last_ticket_date = str(last_ticket['created_at']).split('T')[0]
@@ -70,7 +91,6 @@ class ZenQuery():
         return self.url
 
     def build_url(self):
-        self.query = self.text + self.status #...
         url_string = 'https://{0}.zendesk.com/api/v2/search.json?query={1}'.format(self.domain, self.query)
         self.url = url_string
         return 0
@@ -78,11 +98,12 @@ class ZenQuery():
     def create_blank_response_obj(self):
         obj = {
             'ticket_id': '',
-            'ticket_url': '',
+            #'ticket_url': '',
             'date': '',
-            'game': None,
-            'device_type': None,
-            'issue_type': None,
+            'subject': '',
+            #'game': None,
+            #'device_type': None,
+            #'issue_type': None,
             'tags': '',
             #'escalation_status': False,
             'status': ''
@@ -96,11 +117,15 @@ class ZenQuery():
             for ticket in self.tickets:
                 obj = self.create_blank_response_obj()
                 tick_id = str(ticket['id'])
-                tick_id = '=HYPERLINK("{0}{1}", "{1}")'.format("https://crunchyroll.zendesk.com/agent/tickets/", tick_id)
+                tick_domain = "https://{0}.zendesk.com/agent/tickets/".format(self.domain)
+                tick_id = '=HYPERLINK("{0}{1}", "{1}")'.format(tick_domain, tick_id)
                 obj['ticket_id'] = tick_id
-                obj['ticket_url'] = 'https://crunchyroll.zendesk.com/agent/tickets/' + str(ticket['id'])
+                #obj['ticket_url'] = tick_domain + str(ticket['id'])
                 date = datetime.strptime(ticket['created_at'],"%Y-%m-%dT%H:%M:%SZ")
                 obj['date'] = date.strftime("%Y-%m-%d")
+
+                obj['subject'] = str(ticket['subject'])
+                obj['tags'] = str(ticket['tags'])
 
                 if custom != None:
                     for custom_field in ticket['custom_fields']:
@@ -148,10 +173,11 @@ class ZenOut():
         assert name != None, 'Provide a sheet name.'
         try:
             self.gsheet_auth = pygsheets.authorize(service_file=auth)
-            self.gsheets = gc.open(name)
+            self.gsheets = self.gsheet_auth.open(name)
             self.gsheet = self.gsheets[page]
             # clear sheet
             self.gsheet.set_dataframe(self.df, (1,1))
+            print('Posted successfully to: ', name, page)
             return 0
         except Exception as e:
             print(str(e))
