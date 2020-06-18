@@ -157,6 +157,9 @@ class ZenOut():
             print(str(e))
             return -1
 
+    def to_jira(self):
+        return 0
+
 
 
 

@@ -11,14 +11,16 @@ CREDS = config['zendesk']['Credentials']
 AUTH = config['gsheets']['ServiceFile']
 SHEET_NAME = config['gsheets']['SheetName']
 
+
 def main():
+    today = datetime.date(datetime.now())
 
     presets = configparser.ConfigParser()
     presets.read('presets.ini')
+    if presets['DEFAULT']['Period'] == 'W':
+        start_date = (today - timedelta(days=8)).strftime("%Y-%m-%d")
+        end_date = (today - timedelta(days=1)).strftime("%Y-%m-%d")
 
-    today = datetime.date(datetime.now())
-    start_date = (today - timedelta(days=8)).strftime("%Y-%m-%d")
-    end_date = (today - timedelta(days=1)).strftime("%Y-%m-%d")
     tags = "technical"
     form = "Games"
     sortby = ("created_at","desc")
@@ -30,6 +32,9 @@ def main():
 
     zsheet = ZenOut(f_tickets)
     zsheet.to_gsheets(auth=AUTH, name=SHEET_NAME)
+    # this line is a test to make sure
+    # that progress is being Saved
+    
     return 0
 
 
