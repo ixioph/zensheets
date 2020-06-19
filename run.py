@@ -23,11 +23,13 @@ def main():
     sortby = (presets['DEFAULT']['SortBy'].strip('"'),
                 presets['DEFAULT']['SortOrder'].strip('"'))
     # if an argument is provided
-    if len(sys.argv) > 1:
+    if len(sys.argv) == 2:
         # use argument as name of preset label
         tags = presets[sys.argv[1]]['Tags'].strip('"')
         form = presets[sys.argv[1]]['Form'].strip('"')
         sheet_name = presets[sys.argv[1]]['SheetName'].strip('"')
+    elif len(sys.argv) > 2:
+        tags=['test0', 'test1']
     else: # else use tester info
         tags = "issue_buffering"
         form = "Technical"
