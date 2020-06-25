@@ -9,15 +9,22 @@ class ZenQuery():
     tickets = None
     formatted = None
     df = None
-    def __init__(self, domain, creds, view=None, text=None, status=None,
+    def __init__(self, domain, creds, dyin=False, dyout=False, view=None, text=None, status=None,
                  to_date=None, from_date=None, tags=None, form=None,
                  group=None, sortby=None):
         self.domain = domain
         self.header = {'Authorization': f'Basic {creds}'}
+
         if view != None:
             self.view = view
             self.kind = 'VIEW'
-            return
+            return 0
+        elif dyin != False:
+            self.kind = 'CUSTOM'
+            # do the things with DYQUERY OBJ. parse and shit, yo
+            # for k in dyin.keys():
+            #     setattr(?, k, dyin[k]) # k to obj?
+            self.process_dynamic_in(dyin)
         else:
             ## TODO: remove hardcoded spaces
             self.query = ""
@@ -28,25 +35,25 @@ class ZenQuery():
                 self.tags = tags
                 if self.query != "":
                     self.query += ' '
-                self.query += 'tags:{0}'.format(tags)
+                self.query += 'tags:{0}'.format(self.tags)
             if form != None:
                 self.form = form
-                self.query += ' form:{0}'.format(form)
+                self.query += ' form:{0}'.format(self.form)
             if group != None:
                 self.group = group
-                self.query += ' group:{0}'.format(group)
+                self.query += ' group:{0}'.format(self.group)
             if status != None:
                 self.status = status
-                self.query += ' status:{0}'.format(status)
+                self.query += ' status:{0}'.format(self.status)
             if from_date != None:
                 self.from_date = from_date
-                self.query += ' created>{0}'.format(from_date)
+                self.query += ' created>{0}'.format(self.from_date)
             if to_date != None:
                 self.to_date = to_date
-                self.query += ' created<{0}'.format(to_date)
+                self.query += ' created<{0}'.format(self.to_date)
             if sortby != None:
                 self.sortby = sortby
-                self.query += '&sort_by={0}&sort_order={1}'.format(sortby[0], sortby[1])
+                self.query += '&sort_by={0}&sort_order={1}'.format(self.sortby[0], self.sortby[1])
             else:
                 # sort by default
                 self.query += '&sort_by=created_at&sort_order=desc'
@@ -54,6 +61,38 @@ class ZenQuery():
             self.kind = 'SEARCH'
             self.build_url()
             print(self.url)
+
+    def process_dynamic_in(self, dyin):
+        if 'text' in dyin.keys():
+            self.text = dyin['text']
+            self.query = dyin['text']
+        if 'tags' in dyin.keys():
+            self.tags = dyin['tags']
+            if self.query != "":
+                self.query += ' '
+            self.query += 'tags:{0}'.format(self.tags)
+        if 'form' in dyin.keys():
+            self.form = dyin['form']
+            self.query += ' form:{0}'.format(self.form)
+        if 'group' in dyin.keys():
+            self.group = dyin['group']
+            self.query += ' group:{0}'.format(self.group)
+        if 'status' in dyin.keys():
+            self.status = dyin['status']
+            self.query += ' status:{0}'.format(self.status)
+        if 'from_date' in dyin.keys():
+            self.from_date = dyin['from_date']
+            self.query += ' created>{0}'.format(self.from_date)
+        if 'to_date' in dyin.keys():
+            self.to_date = dyin['to_date']
+            self.query += ' created<{0}'.format(self.to_date)
+        if 'sortby' in dyin.keys():
+            self.sortby = dyin['sortby']
+            self.query += '&sort_by={0}&sort_order={1}'.format(self.sortby[0], self.sortby[1])
+        else:
+            # sort by default
+            self.query += '&sort_by=created_at&sort_order=desc'
+        return 0
 
 
     def get_results(self):
