@@ -9,11 +9,16 @@ class ZenQuery():
     tickets = None
     formatted = None
     df = None
+    self.format = ['ticket_id', 'date', 'subject', 'tags', 'status']
     def __init__(self, domain, creds, dyin=False, dyout=False, view=None, text=None, status=None,
                  to_date=None, from_date=None, tags=None, form=None,
                  group=None, sortby=None):
         self.domain = domain
         self.header = {'Authorization': f'Basic {creds}'}
+        self.query = ""
+
+        if dyout != False:
+            self.format = dyout
 
         if view != None:
             self.view = view
@@ -26,8 +31,7 @@ class ZenQuery():
             #     setattr(?, k, dyin[k]) # k to obj?
             self.process_dynamic_in(dyin)
         else:
-            ## TODO: remove hardcoded spaces
-            self.query = ""
+            ## TODO: remove hardcoded spaces and clean up this garbage
             if text != None:
                 self.text = text
                 self.query = text
@@ -59,34 +63,35 @@ class ZenQuery():
                 self.query += '&sort_by=created_at&sort_order=desc'
 
             self.kind = 'SEARCH'
-            self.build_url()
-            print(self.url)
+        self.build_url()
+        print(self.url)
 
+    # TODO: this function is fucking ugly
     def process_dynamic_in(self, dyin):
-        if 'text' in dyin.keys():
+        if dyin['text'] != None:
             self.text = dyin['text']
             self.query = dyin['text']
-        if 'tags' in dyin.keys():
+        if dyin['tags'] != None:
             self.tags = dyin['tags']
             if self.query != "":
                 self.query += ' '
             self.query += 'tags:{0}'.format(self.tags)
-        if 'form' in dyin.keys():
+        if dyin['form'] != None:
             self.form = dyin['form']
             self.query += ' form:{0}'.format(self.form)
-        if 'group' in dyin.keys():
+        if dyin['group'] != None:
             self.group = dyin['group']
             self.query += ' group:{0}'.format(self.group)
-        if 'status' in dyin.keys():
+        if dyin['status'] != None:
             self.status = dyin['status']
             self.query += ' status:{0}'.format(self.status)
-        if 'from_date' in dyin.keys():
+        if dyin['from_date'] != None:
             self.from_date = dyin['from_date']
             self.query += ' created>{0}'.format(self.from_date)
-        if 'to_date' in dyin.keys():
+        if dyin['to_date'] != None:
             self.to_date = dyin['to_date']
             self.query += ' created<{0}'.format(self.to_date)
-        if 'sortby' in dyin.keys():
+        if dyin['sortby'] != None:
             self.sortby = dyin['sortby']
             self.query += '&sort_by={0}&sort_order={1}'.format(self.sortby[0], self.sortby[1])
         else:
@@ -135,18 +140,9 @@ class ZenQuery():
         return 0
 
     def create_blank_response_obj(self):
-        obj = {
-            'ticket_id': '',
-            #'ticket_url': '',
-            'date': '',
-            'subject': '',
-            #'game': None,
-            #'device_type': None,
-            #'issue_type': None,
-            'tags': '',
-            #'escalation_status': False,
-            'status': ''
-        }
+        obj = {}
+        for field in self.format:
+            obj[field] = ''
         return obj
 
     # TODO: Evaluate I/O
