@@ -31,7 +31,7 @@ def main():
         form = presets[sys.argv[1]]['Form'].strip('"')
         sheet_name = presets[sys.argv[1]]['SheetName'].strip('"')
     elif len(sys.argv) > 2:
-        dyquery, output = cli_to_query(sys.argv)
+        dyquery, output = cli_to_query(sys.argv, (start_date, end_date))
         sheet_name = "Gsheets Test v1.33.7" # test
     else: # else use test data
         tags = "issue_buffering"
@@ -69,7 +69,7 @@ def get_dates(tf):
     print(start_date, end_date)
     return start_date, end_date
 
-def cli_to_query(args):
+def cli_to_query(args, dates):
     query_obj = {'domain': None, 'creds': None, 'to_date': None,
                     'from_date': None, 'tags': None, 'form': None, 'group': None,
                     'text': None, 'status': None, 'sortby': None}
@@ -77,12 +77,14 @@ def cli_to_query(args):
     for arg in args[1:]: # everything after the script name
         k,v = arg.split('=')
         if k.lower() in query_obj.keys():
-            query_obj[k] = v
+            query_obj[k] = str(v)#.replace('-','')
         elif k.lower() == 'out':
             out_list = v
         else:
             print('Argument: {0} Not Valid!'.format(k))
             return -1
+    query_obj['from_date'] = dates[0] if query_obj['from_date'] == None else query_obj['from_date']
+    query_obj['to_date'] = dates[1] if query_obj['to_date'] == None else query_obj['to_date']
     return query_obj, out_list
 
 

@@ -9,7 +9,7 @@ class ZenQuery():
     tickets = None
     formatted = None
     df = None
-    self.format = ['ticket_id', 'date', 'subject', 'tags', 'status']
+    format = ['id', 'created_at', 'subject', 'tags', 'status']
     def __init__(self, domain, creds, dyin=False, dyout=False, view=None, text=None, status=None,
                  to_date=None, from_date=None, tags=None, form=None,
                  group=None, sortby=None):
@@ -151,27 +151,30 @@ class ZenQuery():
             objlist = []
             for ticket in self.tickets:
                 obj = self.create_blank_response_obj()
-                tick_id = str(ticket['id'])
-                tick_domain = "https://{0}.zendesk.com/agent/tickets/".format(self.domain)
-                tick_id = '=HYPERLINK("{0}{1}", "{1}")'.format(tick_domain, tick_id)
-                obj['ticket_id'] = tick_id
-                #obj['ticket_url'] = tick_domain + str(ticket['id'])
-                date = datetime.strptime(ticket['created_at'],"%Y-%m-%dT%H:%M:%SZ")
-                obj['date'] = date.strftime("%Y-%m-%d")
-
-                obj['subject'] = str(ticket['subject'])
-                obj['tags'] = str(ticket['tags'])
-
+                # for every key in the object
+                # assign the ticket value of thet field
+                # matching that key name to the object
+                for k in obj.keys():
+                    obj[k] = str(ticket[k])
+                    # then, make any necessary formatting changes
+                    if k == 'id':
+                        tick_url = "https://{0}.zendesk.com/agent/tickets/".format(self.domain)
+                        tick_url = '=HYPERLINK("{0}{1}", "{1}")'.format(tick_url, obj[k])
+                        obj[k] = tick_url
+                    if k == 'created_at':
+                        date = datetime.strptime(obj[k],"%Y-%m-%dT%H:%M:%SZ")
+                        obj[k] = date.strftime("%Y-%m-%d")
+                    # TODO: move the escalated games mod to another function
+                    # where X = tag to look for, y = whether it's found
+                    if k == 'tags' and 'escalated_games' in obj[k]:
+                        obj['escalated_games'] = True
+                # TODO: revisit custom fields
                 if custom != None:
                     for custom_field in ticket['custom_fields']:
                         if str(custom_field['id']) not in custom.keys():
                             continue
                         else:
                             obj[str(custom[str(custom_field['id'])])] = custom_field['value']
-                # update escalation status
-                if 'escalated_games' in ticket['tags']:
-                    obj['escalation_status'] = True
-                obj['status'] = ticket['status']
                 objlist.append(obj)
             self.formatted = objlist
             return objlist
