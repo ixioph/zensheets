@@ -17,7 +17,7 @@ class ZenQuery():
         self.header = {'Authorization': f'Basic {creds}'}
         self.query = ""
 
-        if dyout != False:
+        if dyout != False and dyout != None:
             self.format = dyout
 
         if view != None:
@@ -214,6 +214,7 @@ class ZenOut():
             self.gsheets = self.gsheet_auth.open(name)
             self.gsheet = self.gsheets[page]
             # clear sheet
+            self.gsheet.clear(fields='*')
             self.gsheet.set_dataframe(self.df, (1,1))
             print('Posted successfully to: ', name, page)
             return 0

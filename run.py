@@ -79,7 +79,7 @@ def cli_to_query(args, dates):
         if k.lower() in query_obj.keys():
             query_obj[k] = str(v)#.replace('-','')
         elif k.lower() == 'out':
-            out_list = v
+            out_list = list(v.strip('[]').split(','))
         else:
             print('Argument: {0} Not Valid!'.format(k))
             return -1
