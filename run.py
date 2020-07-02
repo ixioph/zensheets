@@ -30,19 +30,18 @@ def main():
         tags = presets[sys.argv[1]]['Tags'].strip('"')
         form = presets[sys.argv[1]]['Form'].strip('"')
         sheet_name = presets[sys.argv[1]]['SheetName'].strip('"')
+        query = zs.ZenQuery(domain=DOMAIN, creds=CREDS, to_date=end_date,
+            from_date=start_date, tags=tags, form=form, sortby=sortby)
     elif len(sys.argv) > 2:
         dyquery, output = cli_to_query(sys.argv, (start_date, end_date))
         sheet_name = "Gsheets Test v1.33.7" # test
+        query = zs.ZenQuery(domain=DOMAIN, creds=CREDS, dyin=dyquery, dyout=output)
     else: # else use test data
-        tags = "issue_buffering"
-        form = "Technical"
+        tags = DOMAIN
+        form = 'Technical'
         sheet_name = "Gsheets Test v1.33.7"
-
-    if dyquery == None:
         query = zs.ZenQuery(domain=DOMAIN, creds=CREDS, to_date=end_date,
             from_date=start_date, tags=tags, form=form, sortby=sortby)
-    else:
-        query = zs.ZenQuery(domain=DOMAIN, creds=CREDS, dyin=dyquery, dyout=output)
 
     tickets = query.get_results()
     f_tickets = query.format_tickets()
@@ -50,18 +49,21 @@ def main():
     zsheet = zs.ZenOut(zq=f_tickets)
     zsheet.to_gsheets(auth=AUTH, name=sheet_name)
 
-    return 0
+    return 0 # zsheet.df
 
 # Helpers
 def get_dates(tf):
     start_date = end_date = 0
-    print(start_date, end_date)
+    #print(start_date, end_date)
     today = datetime.date(datetime.now())
     if tf == 'M': # 1 Month
         start_date = (today - timedelta(days=31)).strftime("%Y-%m-%d")
         end_date = (today - timedelta(days=1)).strftime("%Y-%m-%d")
     elif tf == 'W': # 1 Week
         start_date = (today - timedelta(days=8)).strftime("%Y-%m-%d")
+        end_date = (today - timedelta(days=1)).strftime("%Y-%m-%d")
+    elif tf == 'D': # 1 Week
+        start_date = (today - timedelta(days=2)).strftime("%Y-%m-%d")
         end_date = (today - timedelta(days=1)).strftime("%Y-%m-%d")
     else:
         start_date = (today - timedelta(days=8)).strftime("%Y-%m-%d")

@@ -97,22 +97,23 @@ class ZenQuery():
         else:
             # sort by default
             self.query += '&sort_by=created_at&sort_order=desc'
-        return 0
+        #return 0
 
 
     def get_results(self):
         try:
             r = requests.get(self.url, headers=self.header)
             if (r.status_code == 200):
-                print('Query Retrieval Successful!\n')
+                print('Page Retrieval Successful!', self.url)
                 response = json.loads(str(r.text))
                 count = response['count']
                 self.tickets = response['results']
                 if response['next_page'] is not None:
                     if 'page=11' not in response['next_page']:
                         self.url = response['next_page']
+                        curr_tickets = self.tickets
                         new_tickets = self.get_results()
-                        self.tickets = self.tickets + new_tickets
+                        self.tickets = curr_tickets + new_tickets
                     else:
                         last_ticket = self.tickets[len(self.tickets)-1]
                         last_ticket_date = str(last_ticket['created_at']).split('T')[0]
@@ -121,7 +122,7 @@ class ZenQuery():
                         self.from_date = None
                         self.sortby = '&sort_by=created_at&sort_order=desc'
                         self.build_url()
-                        new_self.tickets = self.get_results(self.url)
+                        new_self.tickets = self.get_results()
                         self.tickets = self.tickets + new_self.tickets
                 return self.tickets
             else:
@@ -129,7 +130,7 @@ class ZenQuery():
         except Exception as e:
             print(str(e))
             return None
-        return 0
+        #return 0
 
     def get_url(self):
         return self.url
@@ -137,7 +138,7 @@ class ZenQuery():
     def build_url(self):
         url_string = 'https://{0}.zendesk.com/api/v2/search.json?query={1}'.format(self.domain, self.query)
         self.url = url_string
-        return 0
+        #return 0
 
     def create_blank_response_obj(self):
         obj = {}
@@ -216,7 +217,7 @@ class ZenOut():
             # clear sheet
             self.gsheet.clear(fields='*')
             self.gsheet.set_dataframe(self.df, (1,1))
-            print('Posted successfully to: ', name, page)
+            print(f'Posted successfully to: {name} [{page}]')
             return 0
         except Exception as e:
             print(str(e))
