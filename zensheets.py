@@ -180,6 +180,9 @@ class ZenQuery():
             self.formatted = objlist
             return objlist
 
+        def post_ticket(self):
+            return 0
+
 
 
 class ZenOut():
