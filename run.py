@@ -48,6 +48,7 @@ def main():
 
     zsheet = zs.ZenOut(zq=f_tickets)
     zsheet.to_gsheets(auth=AUTH, name=sheet_name)
+    zsheet.to_csv()
 
     return 0 # zsheet.df
 
@@ -78,6 +79,7 @@ def cli_to_query(args, dates):
     out_list = None
     for arg in args[1:]: # everything after the script name
         k,v = arg.split('=')
+        v = v.strip('"')
         if k.lower() in query_obj.keys():
             query_obj[k] = str(v)#.replace('-','')
         elif k.lower() == 'out':
