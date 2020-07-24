@@ -180,8 +180,7 @@ class ZenQuery():
             self.formatted = objlist
             return objlist
 
-        def post_ticket(self):
-            return 0
+
 
 
 
@@ -227,6 +226,12 @@ class ZenOut():
             return -1
 
     def to_jira(self):
+        ''' Create a Jira issue for each ticket or group of tickets'''
+        return 0
+
+    def to_zendesk(self, dom, auth):
+        ''' Post each entry in the dataframe to the given domain using
+            the credentials in the auth tuple'''
         return 0
 
 
