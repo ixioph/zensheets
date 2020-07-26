@@ -2,17 +2,18 @@ from datetime import datetime
 import pandas as pd
 import pygsheets
 import requests
+import base64
 import json
 
-# TODO: Dynamically formatted output
+# TODO: Dynamically formatted output not
 class ZenQuery():
     tickets = None
     formatted = None
     df = None
     format = ['id', 'created_at', 'subject', 'tags', 'status']
     def __init__(self, domain, creds, dyin=False, dyout=False, view=None, text=None, status=None,
-                 to_date=None, from_date=None, tags=None, form=None,
-                 group=None, sortby=None):
+                 to_date=None, from_date=None, tags=None, form=None, brand=None,
+                 group=None, sortby=None, email=None, name=None):
         self.domain = domain
         self.header = {'Authorization': f'Basic {creds}'}
         self.query = ""
@@ -79,6 +80,9 @@ class ZenQuery():
         if dyin['form'] != None:
             self.form = dyin['form']
             self.query += ' form:{0}'.format(self.form)
+        if dyin['brand'] != None:
+            self.brand = dyin['brand']
+            self.query += ' brand:{0}'.format(self.brand)
         if dyin['group'] != None:
             self.group = dyin['group']
             self.query += ' group:{0}'.format(self.group)
@@ -117,13 +121,18 @@ class ZenQuery():
                     else:
                         last_ticket = self.tickets[len(self.tickets)-1]
                         last_ticket_date = str(last_ticket['created_at']).split('T')[0]
-                        print('paginating from.. ', last_ticket_date)
+                        print('PAGE 11 REACHED ')
+                        print('paginating to.. ', last_ticket_date)
+                        temp_url = self.url
+                        temp_url=temp_url.replace(self.to_date, last_ticket_date)
+                        temp_url=temp_url.replace('page=10&', '')
+                        #print('TEMP URL: ', temp_url)
                         self.to_date = last_ticket_date
                         self.from_date = None
-                        self.sortby = '&sort_by=created_at&sort_order=desc'
-                        self.build_url()
-                        new_self.tickets = self.get_results()
-                        self.tickets = self.tickets + new_self.tickets
+                        self.sortby = '&sort_by=created_at&sort_order=desc' # new_self
+                        self.url = temp_url
+                        new_tickets = self.get_results()
+                        self.tickets = self.tickets + new_tickets
                 return self.tickets
             else:
                 print(str(r.status_code), r.text)
@@ -147,7 +156,7 @@ class ZenQuery():
         return obj
 
     # TODO: Evaluate I/O
-    def format_tickets(self, custom=None):
+    def format_tickets(self, custom=None, userID=True):
         if self.tickets != None:
             objlist = []
             for ticket in self.tickets:
@@ -176,6 +185,10 @@ class ZenQuery():
                             continue
                         else:
                             obj[str(custom[str(custom_field['id'])])] = custom_field['value']
+                if userID and 'address' in ticket['via']['source']['from'].keys():
+                    #print(ticket['id'], ticket['via']['source']['from'], bool(ticket['via']['source']['from']))
+                    obj['email'] = str(ticket['via']['source']['from']['address'])
+                    obj['name'] = str(ticket['via']['source']['from']['name'])
                 objlist.append(obj)
             self.formatted = objlist
             return objlist
@@ -186,7 +199,9 @@ class ZenQuery():
 
 class ZenOut():
     def __init__(self, zq=None):
-        if zq != None:
+        if isinstance(zq, pd.DataFrame): #pandas dataframe:
+            self.df = zq
+        elif zq != None:
             self.df = pd.DataFrame(zq)
         else:
             print('ZenQuery object required.')
@@ -229,10 +244,42 @@ class ZenOut():
         ''' Create a Jira issue for each ticket or group of tickets'''
         return 0
 
-    def to_zendesk(self, dom, auth):
-        ''' Post each entry in the dataframe to the given domain using
-            the credentials in the auth tuple'''
-        return 0
+    def to_zendesk(self, dom, auth=None):
+        ''' Post the given pandas series to a Zendesk ticket, given
+            the domain and authentification'''
+
+        zenurl = f'https://{dom}.zendesk.com/api/v2/requests.json'
+        #creds = str(auth[0] + '/token:' + auth[1]).encode(encoding='utf_8')
+        #creds = base64.b64encode(creds)
+        #head = {f'Authorization': f'Basic {creds}'}
+        for i,tick in self.df.iterrows():
+            print(tick)
+            n = tick['name'] if tick['name'] is not None else "No Name Found"
+            e = tick['email'] if tick['email'] is not None else "No Email Found"
+            dat0 = {"request": {
+                        "requester": {"name": n, "email": e},
+                        "subject": str(tick['subject']),
+                        "comment": {"body": str(tick['description'])}
+                        }
+                    }
+            dat0 = json.dumps(dat0)
+            print(dat0)
+
+            r = requests.post(zenurl, json=dat0)#, headers=head)
+
+            # try:
+            #     r = requests.post(zenurl, headers=head, json=dat0)
+            #
+            #     if (r.status_code == 200):
+            #         print(r.status_code)
+            #     else:
+            #         print(r.status_code, r.text, r.headers, r)
+            # except Exception as e:
+            #     print(str(e))
+            #     return -1
+        return r
+
+
 
 
 

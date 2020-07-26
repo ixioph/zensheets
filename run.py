@@ -75,7 +75,7 @@ def get_dates(tf):
 def cli_to_query(args, dates):
     query_obj = {'domain': None, 'creds': None, 'to_date': None,
                     'from_date': None, 'tags': None, 'form': None, 'group': None,
-                    'text': None, 'status': None, 'sortby': None}
+                    'brand': None, 'text': None, 'status': None, 'sortby': None}
     out_list = None
     for arg in args[1:]: # everything after the script name
         k,v = arg.split('=')
