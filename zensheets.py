@@ -253,7 +253,7 @@ class ZenOut():
         #creds = base64.b64encode(creds)
         #head = {f'Authorization': f'Basic {creds}'}
         for i,tick in self.df.iterrows():
-            print(tick)
+            #print(tick)
             n = tick['name'] if tick['name'] is not None else "No Name Found"
             e = tick['email'] if tick['email'] is not None else "No Email Found"
             dat0 = {"request": {
@@ -262,21 +262,24 @@ class ZenOut():
                         "comment": {"body": str(tick['description'])}
                         }
                     }
+            print(type(dat0))
             dat0 = json.dumps(dat0)
-            print(dat0)
+            print(type(dat0))
+            dat0 = json.loads(dat0)
+            print(type(dat0), dat0)
 
-            r = requests.post(zenurl, json=dat0)#, headers=head)
 
-            # try:
-            #     r = requests.post(zenurl, headers=head, json=dat0)
-            #
-            #     if (r.status_code == 200):
-            #         print(r.status_code)
-            #     else:
-            #         print(r.status_code, r.text, r.headers, r)
-            # except Exception as e:
-            #     print(str(e))
-            #     return -1
+
+            try:
+                r = requests.post(zenurl, json=dat0)#, headers=head)
+
+                if (r.status_code == 200):
+                    print(r.status_code)
+                else:
+                    print(r.status_code, r.text, r.headers, r)
+            except Exception as e:
+                print(str(e))
+                return -1
         return r
 
 
