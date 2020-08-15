@@ -10,7 +10,7 @@ class ZenQuery():
     tickets = None
     formatted = None
     df = None
-    format = ['id', 'created_at', 'subject', 'tags', 'status']
+    out_format = ['id', 'created_at', 'subject', 'tags', 'status']
     def __init__(self, domain, creds, dyin=False, dyout=False, view=None, text=None, status=None,
                  to_date=None, from_date=None, tags=None, form=None, brand=None,
                  group=None, sortby=None, email=None, name=None):
@@ -19,7 +19,8 @@ class ZenQuery():
         self.query = ""
 
         if dyout != False and dyout != None:
-            self.format = dyout
+            self.out_format = dyout
+            print("Output Format:", self.out_format)
 
         if view != None:
             self.view = view
@@ -151,8 +152,9 @@ class ZenQuery():
 
     def create_blank_response_obj(self):
         obj = {}
-        for field in self.format:
+        for field in self.out_format:
             obj[field] = ''
+        #print("Output Object:", obj)
         return obj
 
     # TODO: Evaluate I/O
@@ -164,7 +166,8 @@ class ZenQuery():
                 # for every key in the object
                 # assign the ticket value of thet field
                 # matching that key name to the object
-                for k in obj.keys():
+                ##print("Object Keys:", obj.keys())
+                for k in list(obj):
                     obj[k] = str(ticket[k])
                     # then, make any necessary formatting changes
                     if k == 'id':

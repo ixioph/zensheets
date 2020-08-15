@@ -16,6 +16,7 @@ AUTH = config['gsheets']['ServiceFile'].strip('"')
 
 
 def main():
+    print("Provided Arguments:", sys.argv)
     presets = configparser.ConfigParser()
     presets.read('presets.ini')
 
