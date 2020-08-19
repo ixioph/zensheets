@@ -8,6 +8,12 @@ import json
 # TODO: Dynamically formatted output not
 class ZenQuery():
     tickets = None
+    counts = {
+                'ticket': 0,
+                'status': {'new': 0, 'open': 0, 'pending': 0, 'solved': 0},
+                'tags': {},
+                'surveys': {'positive': 0, 'negative': 0}
+             }
     formatted = None
     df = None
     out_format = ['id', 'created_at', 'subject', 'tags', 'status']
@@ -111,7 +117,7 @@ class ZenQuery():
             if (r.status_code == 200):
                 print('Page Retrieval Successful!', self.url)
                 response = json.loads(str(r.text))
-                count = response['count']
+                self.counts['ticket'] = response['count']
                 self.tickets = response['results']
                 if response['next_page'] is not None:
                     if 'page=11' not in response['next_page']:
