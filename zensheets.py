@@ -8,11 +8,12 @@ import json
 # TODO: Dynamically formatted output not
 class ZenQuery():
     tickets = None
-    counts = {
+    meta = {
                 'ticket': 0,
-                'status': {'new': 0, 'open': 0, 'pending': 0, 'solved': 0},
+                'status': {'new': 0, 'open': 0, 'pending': 0, 'hold': 0, 'solved': 0, 'closed': 0},
+                'form_id': 0,
                 'tags': {},
-                'surveys': {'positive': 0, 'negative': 0}
+                'surveys': {'positive': 0, 'negative': 0, 'none': 0}
              }
     formatted = None
     df = None
@@ -117,7 +118,7 @@ class ZenQuery():
             if (r.status_code == 200):
                 print('Page Retrieval Successful!', self.url)
                 response = json.loads(str(r.text))
-                self.counts['ticket'] = response['count']
+                self.meta['ticket'] = response['count']
                 self.tickets = response['results']
                 if response['next_page'] is not None:
                     if 'page=11' not in response['next_page']:
@@ -147,6 +148,47 @@ class ZenQuery():
             print(str(e))
             return None
         #return 0
+
+    def calculate_meta(self):
+        self.meta['form_id'] = self.tickets[0]['ticket_form_id']
+        for t in self.tickets:
+            # statuses
+            self.meta['status'][t['status']] += 1
+            # tags
+            for tag in t['tags']:
+                if tag in self.meta['tags'].keys():
+                    self.meta['tags'][tag] += 1
+                else:
+                    self.meta['tags'][tag] = 1
+            # surveys
+                if t['satisfaction_rating']['score'] == 'good':
+                    self.meta['surveys']['positive'] += 1
+                elif t['satisfaction_rating']['score'] == 'bad':
+                    self.meta['surveys']['negative'] += 1
+                else:
+                    self.meta['surveys']['none'] += 1
+            if self.meta['surveys']['positive'] != 0 and self.meta['surveys']['negative'] != 0:
+                self.meta['surveys']['score'] = 100*(1 - self.meta['surveys']['negative']/self.meta['surveys']['positive'])
+            elif self.meta['surveys']['positive'] == 0:
+                self.meta['surveys']['score'] = 0
+            elif self.meta['surveys']['negative'] == 0:
+                self.meta['surveys']['score'] = 100 # form
+        #print(f'meta:{self.meta}')
+        return self.meta
+
+    def build_docs_from_meta(self):
+        doc = []
+        ph = 'XXXXX'
+        doc.append(f"Below are the last week's CS numbers for {self.meta['form_id']} support.")
+        doc.append(f"New Tickets: {self.meta['ticket']}")
+        doc.append(f"Open/Pending: {self.meta['status']['open']}/{self.meta['status']['pending']}")
+        doc.append(f"Solved/Closed: {self.meta['status']['solved']}/{self.meta['status']['closed']}")
+        doc.append(f"Avg Response: {ph}hrs")
+        doc.append(f"Satisfaction: {self.meta['surveys']['score']}")
+        doc.append(f"CSAT includes {self.meta['surveys']['positive']} positive surveys and {self.meta['surveys']['negative']} negative.")
+        doc.append(f"The Top 3 Inquiries, by the tags, were: \n\t-- {ph}")
+        print(doc)
+        return doc
 
     def get_url(self):
         return self.url

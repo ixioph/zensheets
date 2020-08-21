@@ -45,6 +45,8 @@ def main():
             from_date=start_date, tags=tags, form=form, sortby=sortby)
 
     tickets = query.get_results()
+    cc0 = query.calculate_meta()
+    cc0 = query.build_docs_from_meta()
     f_tickets = query.format_tickets()
 
     zsheet = zs.ZenOut(zq=f_tickets)
