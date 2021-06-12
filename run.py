@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import zensheets as zs
+import pandas as pd
 import configparser
 import sys
 
@@ -21,6 +22,7 @@ def main():
     presets.read('presets.ini')
 
     start_date, end_date = get_dates(presets['DEFAULT']['Period'].strip('"'))
+
     sortby = (presets['DEFAULT']['SortBy'].strip('"'),
                 presets['DEFAULT']['SortOrder'].strip('"'))
     dyquery = None
@@ -58,7 +60,6 @@ def main():
 # Helpers
 def get_dates(tf):
     start_date = end_date = 0
-    #print(start_date, end_date)
     today = datetime.date(datetime.now())
     if tf == 'M': # 1 Month
         start_date = (today - timedelta(days=31)).strftime("%Y-%m-%d")
@@ -72,6 +73,7 @@ def get_dates(tf):
     else:
         start_date = (today - timedelta(days=8)).strftime("%Y-%m-%d")
         end_date = (today - timedelta(days=1)).strftime("%Y-%m-%d")
+    start_date = '2019-01-01'
     print(start_date, end_date)
     return start_date, end_date
 

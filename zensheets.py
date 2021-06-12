@@ -1,9 +1,21 @@
 from datetime import datetime
 import pandas as pd
+import collections
 import pygsheets
 import requests
 import base64
 import json
+
+#Temporary location for proofing
+XFORMS = {'39725': 'Technical',
+          '61515': 'General Questions',
+          '58349': 'E-Commerce',
+          '57895': 'Billing',
+          '58439': 'Account/Login',
+          '360001075652': 'Membership'}
+OMIT_TAGS = ['notification_ready', 'tier_1', 'label_processing', 'letsgetthisstarted',
+             'processing_corrections', 'processing_edgecases', 'premium', 'was_premium',
+             'connection_tests', 'and', 'crunchyroll']
 
 # TODO: Dynamically formatted output not
 class ZenQuery():
@@ -156,10 +168,13 @@ class ZenQuery():
             self.meta['status'][t['status']] += 1
             # tags
             for tag in t['tags']:
-                if tag in self.meta['tags'].keys():
-                    self.meta['tags'][tag] += 1
-                else:
-                    self.meta['tags'][tag] = 1
+                # TODO: remove global variable here
+                if tag not in OMIT_TAGS:
+                    if tag in self.meta['tags'].keys():
+                        self.meta['tags'][tag] += 1
+                    else:
+                        self.meta['tags'][tag] = 1
+                # TODO: else, keep track of omitted in another variable
             # surveys
                 if t['satisfaction_rating']['score'] == 'good':
                     self.meta['surveys']['positive'] += 1
@@ -169,26 +184,36 @@ class ZenQuery():
                     self.meta['surveys']['none'] += 1
             if self.meta['surveys']['positive'] != 0 and self.meta['surveys']['negative'] != 0:
                 self.meta['surveys']['score'] = 100*(1 - self.meta['surveys']['negative']/self.meta['surveys']['positive'])
-            elif self.meta['surveys']['positive'] == 0:
-                self.meta['surveys']['score'] = 0
             elif self.meta['surveys']['negative'] == 0:
                 self.meta['surveys']['score'] = 100 # form
+            elif self.meta['surveys']['positive'] == 0:
+                self.meta['surveys']['score'] = 0
         #print(f'meta:{self.meta}')
         return self.meta
 
     def build_docs_from_meta(self):
         doc = []
         ph = 'XXXXX'
-        doc.append(f"Below are the last week's CS numbers for {self.meta['form_id']} support.")
-        doc.append(f"New Tickets: {self.meta['ticket']}")
-        doc.append(f"Open/Pending: {self.meta['status']['open']}/{self.meta['status']['pending']}")
-        doc.append(f"Solved/Closed: {self.meta['status']['solved']}/{self.meta['status']['closed']}")
-        doc.append(f"Avg Response: {ph}hrs")
-        doc.append(f"Satisfaction: {self.meta['surveys']['score']}")
-        doc.append(f"CSAT includes {self.meta['surveys']['positive']} positive surveys and {self.meta['surveys']['negative']} negative.")
-        doc.append(f"The Top 3 Inquiries, by the tags, were: \n\t-- {ph}")
-        print(doc)
+        doc.append(f"Hello SFCS!\n")
+        # TODO: replace global with ini file
+        doc.append(f"Below are the last week's CS numbers for Form::{XFORMS[str(self.meta['form_id'])]}: \n")
+        doc.append(f"New Tickets:   {self.meta['ticket']}")
+        doc.append(f"Open/Pending:  {self.meta['status']['open']}/{self.meta['status']['pending']}")
+        doc.append(f"Solved/Closed: {self.meta['status']['solved']}/{self.meta['status']['closed']}\n")
+        #doc.append(f"Avg Response:  {ph} hrs")
+        doc.append(f"Satisfaction:  {self.meta['surveys']['score']}% ~ based on: {self.meta['surveys']['positive']} positive and {self.meta['surveys']['negative']} negative surveys.")
+        doc.append(f"The Top 5 Inquiries, by the tags, were: \n\t {self.get_most_used(5)}\n")
+        print('\n'.join(line for line in doc))
+        #print(self.tickets[0])
         return doc
+
+    def get_most_used(self, n=3):
+        c = collections.Counter(self.meta['tags'])
+
+        most_used_tags = c.most_common(n)
+        # for letter, count in most_used_tags:
+        #     print '%s: %7d' % (letter, count)
+        return most_used_tags
 
     def get_url(self):
         return self.url
